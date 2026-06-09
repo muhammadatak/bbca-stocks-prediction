@@ -1,0 +1,121 @@
+# .github/workflows/mlops-automation.yaml
+name: MLOps Automation Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ─────────────────────────────
+  # TAHAP 1: Testing
+  # ─────────────────────────────
+  test:
+    name: "Tahap 1: Automated Testing"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install UV
+        run: pip install uv
+
+      - name: Cache UV
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv pip install -e ".[dev]" --system
+
+      - name: Run pytest
+        run: pytest tests/ -v --tb=short
+
+  # ─────────────────────────────
+  # TAHAP 2: Training
+  # ─────────────────────────────
+  train:
+    name: "Tahap 2: Automated Training"
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install UV
+        run: pip install uv
+
+      - name: Cache UV
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv pip install -e . --system
+
+      - name: Run training
+        run: python src/train.py
+
+      - name: Upload MLflow state
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-state
+          path: |
+            mlruns/
+            mlflow.db
+
+  # ─────────────────────────────
+  # TAHAP 3 & 4: Evaluate & Register
+  # ─────────────────────────────
+  evaluate-and-register:
+    name: "Tahap 3 & 4: Evaluate & Register"
+    runs-on: ubuntu-latest
+    needs: train
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install UV
+        run: pip install uv
+
+      - name: Cache UV
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv pip install -e . --system
+
+      - name: Download MLflow state
+        uses: actions/download-artifact@v4
+        with:
+          name: mlflow-state
+          path: .
+
+      - name: Evaluate & Register
+        run: python src/evaluate_register.py
+
+      - name: Upload hasil
+        uses: actions/upload-artifact@v4
+        with:
+          name: registration-result
+          path: model_registration_result.json
