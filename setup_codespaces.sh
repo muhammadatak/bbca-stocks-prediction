@@ -7,18 +7,18 @@ echo "========================================"
 
 echo ""
 echo "1. Install dependencies..."
-pip install --upgrade pip
-pip install mlflow xgboost scikit-learn pandas yfinance pyyaml
+python3 -m pip install --upgrade pip
+python3 -m pip install mlflow xgboost scikit-learn pandas yfinance pyyaml
 
 echo ""
 echo "2. Training model XGBoost..."
 cd src
-python train.py
+python3 train.py
 cd ..
 
 echo ""
 echo "3. Register model dengan alias champion..."
-python register_champion.py
+python3 register_champion.py
 
 echo ""
 echo "4. Cari path model artifacts..."
