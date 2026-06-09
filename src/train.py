@@ -18,7 +18,7 @@ df = pd.read_csv(clean_data)
 
 X_train, y_train, X_valid, y_valid = run_split(df)
 
-mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "sqlite:///../mlflow.db"))
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
 mlflow.set_experiment("stocks_pred_xgboost")
 
 with mlflow.start_run():

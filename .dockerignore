@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# DVC
+data/raw/
+data/processed/
+.dvc/
+*.dvc
+
+# Git
+.git/
+.gitignore
+
+# Tests
+tests/
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+Dockerfile*
+docker-compose*
+
+# Misc
+*.md
+.env
+.thresholds.yaml

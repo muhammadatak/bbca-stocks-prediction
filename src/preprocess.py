@@ -65,6 +65,15 @@ def macd(df):
 # clean
 
 
+def add_features(df):
+    """Tambahkan semua fitur teknikal (RSI, EMA, SMA, MACD) untuk inferensi."""
+    df = df.copy()
+    df = rsi(df)
+    df = ema_sma(df)
+    df = macd(df)
+    return df
+
+
 def create_label(df):
     df = df.copy()
     df["target"] = (df["Close"].shift(-1) > df["Close"]).astype(int)

@@ -1,54 +1,81 @@
 services:
+  # ── PostgreSQL (MLflow backend store) ─────────────────
   postgres:
-    image: postgres:16
-    container_name: mlflow_postgres
-    restart: always
+    image: postgres:16-alpine
+    container_name: mlflow-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: mlflow
-      POSTGRES_PASSWORD: mlflow123
-      POSTGRES_DB: mlflow_db
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-mlflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mlflow_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-mlflow}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mlflow} -d ${POSTGRES_DB:-mlflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ml-network
 
+  # ── MLflow Tracking Server ────────────────────────────
   mlflow:
     build:
       context: .
-      dockerfile: Dockerfile.mlflow
-    image: stocks-prediction-mlflow
-    container_name: mlflow_server
-    restart: always
+      dockerfile: mlflow.Dockerfile
+    container_name: mlflow-server
+    restart: unless-stopped
     depends_on:
-      - postgres
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./mlruns:/mlflow/mlruns
+      postgres:
+        condition: service_healthy
+    environment:
+      MLFLOW_BACKEND_STORE_URI: postgresql://${POSTGRES_USER:-mlflow}:${POSTGRES_PASSWORD:-mlflow_secret}@postgres:5432/${POSTGRES_DB:-mlflow}
+      MLFLOW_ARTIFACT_ROOT: /mlflow-artifacts
     command: >
       mlflow server
-      --backend-store-uri postgresql://mlflow:mlflow123@postgres:5432/mlflow_db
-      --serve-artifacts
-      --artifacts-destination /mlflow/mlruns
       --host 0.0.0.0
-      --allowed-hosts mlflow,mlflow:5000,localhost,localhost:5000,127.0.0.1,127.0.0.1:5000
+      --port 5000
+      --backend-store-uri postgresql://${POSTGRES_USER:-mlflow}:${POSTGRES_PASSWORD:-mlflow_secret}@postgres:5432/${POSTGRES_DB:-mlflow}
+      --artifacts-destination /mlflow-artifacts
+      --serve-artifacts
+    volumes:
+      - mlflow_artifacts:/mlflow-artifacts
+    ports:
+      - "5000:5000"
+    networks:
+      - ml-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
+  # ── FastAPI Prediction Service ───────────────────────
   fastapi:
     build:
       context: .
       dockerfile: app/DockerFile
-    container_name: prediction_api
-    restart: always
+    container_name: stocks-fastapi
+    restart: unless-stopped
     depends_on:
-      - mlflow
-    ports:
-      - "8000:8000"
+      mlflow:
+        condition: service_healthy
     environment:
       MLFLOW_TRACKING_URI: http://mlflow:5000
-      MODEL_NAME: bbca-xgboost-predictor
-      MODEL_ALIAS: champion
-    volumes:
-      - ./mlruns:/mlflow/mlruns
+      MODEL_NAME: ${MODEL_NAME:-bbca-xgboost-predictor}
+      MODEL_ALIAS: ${MODEL_ALIAS:-champion}
+      TICKER: ${TICKER:-BBCA.JK}
+    ports:
+      - "8000:8000"
+    networks:
+      - ml-network
 
 volumes:
   postgres_data:
+  mlflow_artifacts:
+
+networks:
+  ml-network:
+    driver: bridge
