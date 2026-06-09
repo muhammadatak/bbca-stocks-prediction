@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  # 3 Replicas MLflow Model Serving
+  # Model diload dari bind mount (file:/ URI, tanpa tracking server)
+  mlflow-serve-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    container_name: mlflow_serve_1
+    restart: always
+    ports:
+      - "5001:5001"
+    command: >
+      mlflow models serve
+      --model-uri "file:/mlflow/model"
+      --host 0.0.0.0
+      --port 5001
+      --env-manager local
+    volumes:
+      - ./mlruns/1/models/m-d93442ea13c14b289560d0db9a9bc6e6/artifacts:/mlflow/model:ro
+
+  mlflow-serve-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    container_name: mlflow_serve_2
+    restart: always
+    ports:
+      - "5002:5001"
+    command: >
+      mlflow models serve
+      --model-uri "file:/mlflow/model"
+      --host 0.0.0.0
+      --port 5001
+      --env-manager local
+    volumes:
+      - ./mlruns/1/models/m-d93442ea13c14b289560d0db9a9bc6e6/artifacts:/mlflow/model:ro
+
+  mlflow-serve-3:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    container_name: mlflow_serve_3
+    restart: always
+    ports:
+      - "5003:5001"
+    command: >
+      mlflow models serve
+      --model-uri "file:/mlflow/model"
+      --host 0.0.0.0
+      --port 5001
+      --env-manager local
+    volumes:
+      - ./mlruns/1/models/m-d93442ea13c14b289560d0db9a9bc6e6/artifacts:/mlflow/model:ro
