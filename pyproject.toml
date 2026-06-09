@@ -8,6 +8,7 @@ dependencies = [
     "dvc[s3]>=3.67.1",
     "fastapi[standard]>=0.136.3",
     "mlflow>=3.13.0",
+    "prometheus-fastapi-instrumentator>=8.0.0",
     "pytest>=9.0.3",
     "scikit-learn>=1.9.0",
     "xgboost>=3.2.0",
