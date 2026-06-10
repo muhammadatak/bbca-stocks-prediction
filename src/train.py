@@ -34,9 +34,9 @@ with mlflow.start_run():
     f1 = f1_score(y_valid, val_pred)
     auc = roc_auc_score(y_valid, val_prob)
 
-    mlflow.log_metric("avg_accuracy", np.mean(acc))
-    mlflow.log_metric("avg_f1", np.mean(f1))
-    mlflow.log_metric("avg_roc_auc", np.mean(auc))
+    mlflow.log_metric("avg_accuracy",acc)
+    mlflow.log_metric("avg_f1", f1)
+    mlflow.log_metric("avg_roc_auc", auc)
 
     mlflow.xgboost.log_model(model, "model")
 
