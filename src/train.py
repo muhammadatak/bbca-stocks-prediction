@@ -5,7 +5,7 @@ import os
 import mlflow
 import mlflow.xgboost
 import xgboost as xgb
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.metrics import accuracy_score, f1_score
 import numpy as np
 import pandas as pd
 from preprocess import run_split
@@ -18,12 +18,21 @@ df = pd.read_csv(clean_data)
 
 X_train, y_train, X_valid, y_valid = run_split(df)
 
-mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
+mlflow.set_tracking_uri("http://localhost:5000")
 mlflow.set_experiment("stocks_pred_xgboost")
 
+
+
 with mlflow.start_run():
+    mlflow.log_param("n_estimators", 500)
+    mlflow.log_param("learning_rate", 0.05)
+    mlflow.log_param("max_depth", 9)
+
     model = xgb.XGBClassifier(
-        objective="binary:logistic", tree_method="hist", device="cpu"
+        objective="binary:logistic",
+        n_estimators=500,
+        learning_rate=0.05,
+        max_depth=9,
     )
     model.fit(X_train, y_train, eval_set=[(X_valid, y_valid)], verbose=False)
 
@@ -32,16 +41,14 @@ with mlflow.start_run():
 
     acc = accuracy_score(y_valid, val_pred)
     f1 = f1_score(y_valid, val_pred)
-    auc = roc_auc_score(y_valid, val_prob)
 
-    mlflow.log_metric("avg_accuracy",acc)
+    
+    mlflow.log_metric("avg_accuracy", acc)
     mlflow.log_metric("avg_f1", f1)
-    mlflow.log_metric("avg_roc_auc", auc)
 
-    mlflow.xgboost.log_model(model, "model")
+    mlflow.xgboost.log_model(model, artifact_path="model")
 
     print(f"val_accuracy → {acc:.4f}")
     print(f"val_f1       → {f1:.4f}")
-    print(f"val_roc_auc  → {auc:.4f}")
 
 print("Training selesai")

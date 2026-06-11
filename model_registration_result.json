@@ -1,13 +1,13 @@
 {
   "challenger": {
-    "run_id": "b118f4f6ad084430a3a6af5c13a2f4f8",
-    "version": "2",
+    "run_id": "7f8aa6ade7f243d78d94a7cff2fc88d7",
+    "version": "1",
     "alias": "challenger",
     "metrics": {
-      "avg_accuracy": 0.5614035087719298,
-      "avg_f1": 0.46808510638297873,
-      "avg_roc_auc": 0.5648290356478862
+      "avg_accuracy": 0.5526315789473685,
+      "avg_f1": 0.46875,
+      "avg_roc_auc": 0.5776570048309179
     }
   },
-  "promoted_to_champion": false
+  "promoted_to_champion": true
 }
