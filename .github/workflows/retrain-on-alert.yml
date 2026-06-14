@@ -34,11 +34,27 @@ jobs:
       - name: Install dependencies
         run: pip install -e .
 
-      - name: Preprocess (pakai raw data)
+      - name: Start MLflow server
+        run: |
+          export MLFLOW_ALLOW_FILE_STORE=true
+          mlflow server --host 127.0.0.1 --port 5000 \
+            --backend-store-uri file:./mlruns \
+            --artifacts-destination file:./mlruns &
+          sleep 5
+          curl -s http://127.0.0.1:5000/health || echo "Waiting..."
+          sleep 2
+
+      - name: Preprocess
         run: python src/preprocess.py
 
       - name: Run training
+        env:
+          MLFLOW_TRACKING_URI: http://127.0.0.1:5000
+          MLFLOW_ALLOW_FILE_STORE: true
         run: python src/train.py
 
       - name: Evaluate & Register
+        env:
+          MLFLOW_TRACKING_URI: http://127.0.0.1:5000
+          MLFLOW_ALLOW_FILE_STORE: true
         run: python src/evaluate_register.py

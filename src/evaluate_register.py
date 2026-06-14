@@ -2,14 +2,16 @@
 import json
 import os
 import sys
+from pathlib import Path
 
 import mlflow
-import yaml
 from mlflow import MlflowClient
 from mlflow.exceptions import MlflowException
 
-
-mlflow.set_tracking_uri("http://localhost:5000")
+# ── MLflow config ────────────────────────────────────────
+BASE_DIR = Path(__file__).resolve().parent.parent
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", f"file:{BASE_DIR / 'mlruns'}")
+mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 MODEL_NAME = "bbca-xgboost-predictor"
 EXPERIMENT_NAME = "stocks_pred_xgboost"
 
@@ -101,18 +103,6 @@ else:
 # ── Push metrics ke Pushgateway (Scenario A) ──────────
 try:
     from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
-    registry = CollectorRegistry()
-    Gauge("model_accuracy", "Latest model accuracy", registry=registry).set(avg_accuracy)
-    Gauge("model_f1", "Latest model F1", registry=registry).set(avg_f1)
-    push_to_gateway("localhost:9091", job="model-evaluator", registry=registry)
-    print("✅ Metrics pushed to Pushgateway")
-except Exception as e:
-    print(f"⚠️  Pushgateway not available: {e}")
-
-# ── Push metrics ke Pushgateway (Scenario A) ──────────
-try:
-    from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
-
     registry = CollectorRegistry()
     Gauge("model_accuracy", "Latest model accuracy", registry=registry).set(avg_accuracy)
     Gauge("model_f1", "Latest model F1", registry=registry).set(avg_f1)
