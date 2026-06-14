@@ -19,3 +19,5 @@ mlruns/
 # Environment
 .env
 *.env
+# MLflow runtime artifacts
+latest_run_id.txt
