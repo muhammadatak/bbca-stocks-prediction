@@ -1,7 +1,6 @@
 # ── Closed-Loop MLOps: Retraining Pipeline ───────────────
-# Dipanggil oleh webhook saat alert Prometheus/Grafana menyala
-# (Scenario A: Performance-based, Scenario B: Data-drift)
-# Juga dipanggil manual (workflow_dispatch) untuk testing.
+# Trigger: Manual atau via GitHub API (repository_dispatch).
+# Alert Prometheus → Webhook → GitHub API → workflow ini.
 
 name: Retrain on Alert
 
@@ -21,7 +20,7 @@ on:
 jobs:
   retrain:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -32,32 +31,14 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Setup DVC
-        run: |
-          pip install dvc[s3]
-
-      - name: Pull latest data from DVC
-        run: dvc pull data/raw/data.csv.dvc
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
       - name: Install dependencies
         run: pip install -e .
 
-      - name: Run preprocessing
+      - name: Preprocess (pakai raw data)
         run: python src/preprocess.py
-
-      - name: Check data drift (Scenario B)
-        if: inputs.trigger_reason == 'data_drift' || inputs.trigger_reason == 'manual'
-        run: |
-          python src/drift_detector.py || echo "DRIFT_CONFIRMED=true" >> $GITHUB_ENV
 
       - name: Run training
         run: python src/train.py
 
       - name: Evaluate & Register
-        run: python src/evaluate_register.py
-
-      - name: Push metrics to Pushgateway
         run: python src/evaluate_register.py

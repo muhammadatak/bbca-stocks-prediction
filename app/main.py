@@ -88,6 +88,27 @@ def load_registry_model():
 
 MODEL_URI, model = load_registry_model()
 
+
+def _update_champion_metrics():
+    """Ambil metrik champion dari MLflow → set Prometheus gauges (Scenario A)."""
+    try:
+        client = MlflowClient()
+        champ = client.get_model_version_by_alias(MODEL_NAME, MODEL_ALIAS)
+        if champ and champ.run_id:
+            run = client.get_run(champ.run_id)
+            acc = run.data.metrics.get("avg_accuracy", 0)
+            f1 = run.data.metrics.get("avg_f1", 0)
+            model_accuracy.set(acc)
+            model_f1.set(f1)
+            print(f"📊 Champion metrics → acc={acc:.4f}, f1={f1:.4f}")
+    except Exception as e:
+        print(f"⚠️  Cannot fetch champion metrics: {e}")
+
+
+@app.on_event("startup")
+def startup():
+    _update_champion_metrics()
+
 FEATURE_COLUMNS = [
     "Close",
     "RSI",

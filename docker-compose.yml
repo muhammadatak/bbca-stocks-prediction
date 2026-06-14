@@ -61,29 +61,6 @@ services:
     networks:
       - ml-network
 
-  alertmanager:
-    image: prom/alertmanager:latest
-    restart: unless-stopped
-    ports:
-      - "9093:9093"
-    volumes:
-      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-    command:
-      - "--config.file=/etc/alertmanager/alertmanager.yml"
-    networks:
-      - ml-network
-
-  webhook:
-    build:
-      context: .
-      dockerfile: app/DockerFile
-    restart: unless-stopped
-    command: python -m uvicorn src.webhook_server:app --host 0.0.0.0 --port 8080
-    ports:
-      - "8080:8080"
-    networks:
-      - ml-network
-
   grafana:
     image: grafana/grafana:latest
     restart: unless-stopped

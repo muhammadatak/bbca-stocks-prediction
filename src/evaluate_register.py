@@ -101,6 +101,17 @@ else:
 # ── Push metrics ke Pushgateway (Scenario A) ──────────
 try:
     from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
+    registry = CollectorRegistry()
+    Gauge("model_accuracy", "Latest model accuracy", registry=registry).set(avg_accuracy)
+    Gauge("model_f1", "Latest model F1", registry=registry).set(avg_f1)
+    push_to_gateway("localhost:9091", job="model-evaluator", registry=registry)
+    print("✅ Metrics pushed to Pushgateway")
+except Exception as e:
+    print(f"⚠️  Pushgateway not available: {e}")
+
+# ── Push metrics ke Pushgateway (Scenario A) ──────────
+try:
+    from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 
     registry = CollectorRegistry()
     Gauge("model_accuracy", "Latest model accuracy", registry=registry).set(avg_accuracy)
