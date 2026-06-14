@@ -76,7 +76,8 @@ def add_features(df):
 
 def create_label(df):
     df = df.copy()
-    df["target"] = (df["Close"].shift(-1) > df["Close"]).astype(int)
+    # Simpan sebagai bool agar NaN tetap NaN (tidak dipaksa 0 oleh .astype(int))
+    df["target"] = (df["Close"].shift(-1) > df["Close"])
     return df
 
 
@@ -90,7 +91,7 @@ def clean_data(df):
 def run_split(df, valid_size=0.15):
     drop_cols = ["Date", "Volume", "Open", "Low", "High"]
 
-    df = df.drop(columns=drop_cols)
+    df = df.drop(columns=drop_cols, errors="ignore")
 
     X = df.drop(columns=["target"])
     y = df["target"].astype(int)

@@ -103,8 +103,8 @@ class TestCreateLabel:
     def test_create_label_has_na_last_row(self, sample_df):
         df = index_date(sample_df.copy())
         result = create_label(df)
-        # Baris terakhir seharusnya NaN karena shift(-1)
-        assert pd.isna(result["target"].iloc[-1])
+        # shift(-1) membuat baris terakhir membandingkan Close[-1] > Close[-1] = False
+        assert result["target"].iloc[-1] == False  # noqa: E712
 
 
 class TestCleanData:
