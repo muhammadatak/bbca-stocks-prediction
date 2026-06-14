@@ -19,14 +19,22 @@ EXPERIMENT_NAME = "stocks_pred_xgboost"
 
 client = MlflowClient()
 
-runs = mlflow.search_runs(
-    experiment_names=[EXPERIMENT_NAME],
-    order_by=["start_time DESC"],
-    max_results=1
-)
+# Baca run_id dari file (ditulis train.py)
+id_file = BASE_DIR / "latest_run_id.txt"
+if id_file.exists():
+    run_id = id_file.read_text().strip()
+    print(f"📄 Using run_id from {id_file}: {run_id}")
+else:
+    runs = mlflow.search_runs(
+        experiment_names=[EXPERIMENT_NAME],
+        order_by=["start_time DESC"],
+        max_results=1
+    )
+    if runs.empty:
+        print("❌ No MLflow runs found")
+        sys.exit(1)
+    run_id = runs.iloc[0]["run_id"]
 
-latest_run = runs.iloc[0]
-run_id = latest_run["run_id"]
 run = client.get_run(run_id)
 
 metrics = run.data.metrics

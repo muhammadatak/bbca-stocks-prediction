@@ -23,7 +23,8 @@ clean_data = BASE_DIR / "data" / "processed" / "clean_data.csv"
 df = pd.read_csv(clean_data)
 X_train, y_train, X_valid, y_valid = run_split(df)
 
-with mlflow.start_run(log_system_metrics=False):
+with mlflow.start_run(log_system_metrics=False) as active_run:
+    run_id = active_run.info.run_id
     mlflow.log_param("n_estimators", 500)
     mlflow.log_param("learning_rate", 0.05)
     mlflow.log_param("max_depth", 9)
@@ -47,6 +48,11 @@ with mlflow.start_run(log_system_metrics=False):
 
     mlflow.xgboost.log_model(model, artifact_path="model")
 
+    # Tulis run_id ke file agar evaluate_register tahu run mana
+    id_file = BASE_DIR / "latest_run_id.txt"
+    id_file.write_text(run_id)
+
+    print(f"run_id → {run_id}")
     print(f"val_accuracy → {acc:.4f}")
     print(f"val_f1       → {f1:.4f}")
 
