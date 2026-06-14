@@ -48,9 +48,15 @@ with mlflow.start_run(log_system_metrics=False) as active_run:
 
     mlflow.xgboost.log_model(model, artifact_path="model")
 
-    # Tulis run_id ke file agar evaluate_register tahu run mana
-    id_file = BASE_DIR / "latest_run_id.txt"
-    id_file.write_text(run_id)
+    # Tulis metadata ke JSON agar evaluate_register tidak perlu query MLflow
+    import json as _json
+    meta_file = BASE_DIR / "latest_run_meta.json"
+    _json.dump({
+        "run_id": run_id,
+        "avg_accuracy": acc,
+        "avg_f1": f1,
+        "model_uri": f"runs:/{run_id}/model",
+    }, meta_file.open("w"))
 
     print(f"run_id → {run_id}")
     print(f"val_accuracy → {acc:.4f}")

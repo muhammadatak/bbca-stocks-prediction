@@ -15,43 +15,21 @@ from mlflow.exceptions import MlflowException
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", f"file:{BASE_DIR / 'mlruns'}")
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 MODEL_NAME = "bbca-xgboost-predictor"
-EXPERIMENT_NAME = "stocks_pred_xgboost"
 
 client = MlflowClient()
 
-# Baca run_id dari file (ditulis train.py). Fallback ke search_runs jika file corrupt.
-def _get_latest_run_id():
-    id_file = BASE_DIR / "latest_run_id.txt"
-    # Coba dari file dulu
-    if id_file.exists():
-        fid = id_file.read_text().strip()
-        try:
-            client.get_run(fid)
-            print(f"📄 Using run_id from {id_file}: {fid}")
-            return fid
-        except MlflowException:
-            print(f"⚠️  Run {fid} from file not found, falling back to search_runs")
+# ── Baca metadata dari JSON (ditulis train.py) ──────────
+meta_file = BASE_DIR / "latest_run_meta.json"
+if not meta_file.exists():
+    print("❌ latest_run_meta.json not found — did train.py run?")
+    sys.exit(1)
 
-    # Fallback: search semua runs
-    runs = mlflow.search_runs(
-        experiment_names=[EXPERIMENT_NAME],
-        order_by=["start_time DESC"],
-        max_results=1
-    )
-    if runs.empty:
-        print("❌ No MLflow runs found")
-        sys.exit(1)
-    fid = runs.iloc[0]["run_id"]
-    print(f"📄 Using latest run from search: {fid}")
-    return fid
-
-run_id = _get_latest_run_id()
-run = client.get_run(run_id)
-
-metrics = run.data.metrics
-
-avg_accuracy = metrics.get("avg_accuracy")
-avg_f1 = metrics.get("avg_f1")
+meta = json.loads(meta_file.read_text())
+run_id = meta["run_id"]
+avg_accuracy = meta["avg_accuracy"]
+avg_f1 = meta["avg_f1"]
+model_uri = meta["model_uri"]
+print(f"📄 Loaded meta: run_id={run_id}, acc={avg_accuracy:.4f}, f1={avg_f1:.4f}")
 
 thresholds = {
     "avg_accuracy": 0.30,
@@ -70,7 +48,7 @@ print("passed:", passed)
 # register
 if passed:
 
-    model_uri = f"runs:/{run_id}/model"
+    model_uri = meta["model_uri"]
 
     model_version = mlflow.register_model(
         model_uri,

@@ -21,3 +21,5 @@ mlruns/
 *.env
 # MLflow runtime artifacts
 latest_run_id.txt
+latest_run_meta.json
+trigger_log.jsonl
