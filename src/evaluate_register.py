@@ -26,7 +26,7 @@ runs = mlflow.search_runs(
 )
 
 latest_run = runs.iloc[0]
-run_id = latest_run[0]
+run_id = latest_run["run_id"]
 run = client.get_run(run_id)
 
 metrics = run.data.metrics
