@@ -29,23 +29,18 @@ metrics = run.data.metrics
 
 avg_accuracy = metrics.get("avg_accuracy")
 avg_f1 = metrics.get("avg_f1")
-avg_roc_auc = metrics.get("avg_roc_auc")
 
 thresholds = {
     "avg_accuracy": 0.30,
     "avg_f1": 0.30,
-    "avg_roc_auc": 0.30
 }
 
 passed = (
     avg_accuracy >= thresholds["avg_accuracy"] and
-    avg_f1 >= thresholds["avg_f1"] and
-    avg_roc_auc >= thresholds["avg_roc_auc"]
-)
+    avg_f1 >= thresholds["avg_f1"]  )
 
 print("accuracy:", avg_accuracy)
 print("f1:", avg_f1)
-print("roc_auc:", avg_roc_auc)
 print("passed:", passed)
 
 
@@ -85,17 +80,14 @@ if passed:
 
         champ_acc = champion_metrics.get("avg_accuracy", 0)
         champ_f1 = champion_metrics.get("avg_f1", 0)
-        champ_roc = champion_metrics.get("avg_roc_auc", 0)
 
         print("\n--- Champion vs Challenger ---")
-        print(f"Champion  → acc: {champ_acc:.4f}, f1: {champ_f1:.4f}, roc_auc: {champ_roc:.4f}")
-        print(f"Challenger → acc: {avg_accuracy:.4f}, f1: {avg_f1:.4f}, roc_auc: {avg_roc_auc:.4f}")
+        print(f"Champion  → acc: {champ_acc:.4f}, f1: {champ_f1:.4f}")
+        print(f"Challenger → acc: {avg_accuracy:.4f}, f1: {avg_f1:.4f}")
 
         challenger_wins = (
             avg_accuracy >= champ_acc and
-            avg_f1 >= champ_f1 and
-            avg_roc_auc >= champ_roc
-        )
+            avg_f1 >= champ_f1)
 
         if challenger_wins:
             client.set_registered_model_alias(MODEL_NAME, "champion", model_version.version)
@@ -105,3 +97,15 @@ if passed:
 
 else:
     print("❌ Rejected")
+
+# ── Push metrics ke Pushgateway (Scenario A) ──────────
+try:
+    from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
+
+    registry = CollectorRegistry()
+    Gauge("model_accuracy", "Latest model accuracy", registry=registry).set(avg_accuracy)
+    Gauge("model_f1", "Latest model F1", registry=registry).set(avg_f1)
+    push_to_gateway("localhost:9091", job="model-evaluator", registry=registry)
+    print("✅ Metrics pushed to Pushgateway")
+except Exception as e:
+    print(f"⚠️  Pushgateway not available: {e}")

@@ -1,0 +1,42 @@
+# Prometheus Alert Rules
+# Scenario A: Performance-based trigger (accuracy/f1 drop)
+# Scenario B: Data-drift trigger (PSI spike)
+
+groups:
+  - name: model_performance
+    interval: 30s
+    rules:
+      # ── Scenario A: Akurasi turun di bawah threshold ──
+      - alert: ModelAccuracyLow
+        expr: model_accuracy < 0.50
+        for: 1m
+        labels:
+          severity: critical
+          scenario: performance_based
+        annotations:
+          summary: "Model accuracy dropped below threshold"
+          description: "Current accuracy is {{ $value | humanize }} — below threshold 0.50. Retraining triggered."
+
+      - alert: ModelF1Low
+        expr: model_f1 < 0.50
+        for: 1m
+        labels:
+          severity: critical
+          scenario: performance_based
+        annotations:
+          summary: "Model F1-score dropped below threshold"
+          description: "Current F1 is {{ $value | humanize }} — below threshold 0.50."
+
+  - name: data_drift
+    interval: 30s
+    rules:
+      # ── Scenario B: PSI drift terdeteksi ──
+      - alert: DataDriftDetected
+        expr: drift_psi_avg >= 0.10
+        for: 1m
+        labels:
+          severity: warning
+          scenario: drift_based
+        annotations:
+          summary: "Significant data drift detected"
+          description: "Average PSI = {{ $value | humanize }} (threshold 0.10). Consider retraining."

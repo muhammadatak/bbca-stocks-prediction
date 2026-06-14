@@ -1,0 +1,68 @@
+# ── Scenario C: Scheduled Retraining ────────────────────
+# Menjalankan retraining setiap hari Minggu jam 03:00 UTC
+# Hanya jika ada versi dataset baru di DVC.
+
+name: Scheduled Retrain (Sunday)
+
+on:
+  schedule:
+    - cron: "0 3 * * 0"   # every Sunday 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check-and-retrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup DVC
+        run: pip install dvc[s3]
+
+      - name: Check for new DVC data
+        id: dvc_check
+        run: |
+          CURRENT=$(dvc status data/raw/data.csv.dvc 2>&1)
+          echo "DVC status: $CURRENT"
+          if echo "$CURRENT" | grep -q "changed\|new\|modified"; then
+            echo "NEW_DATA=true" >> $GITHUB_OUTPUT
+            echo "✅ Dataset baru terdeteksi"
+          else
+            echo "NEW_DATA=false" >> $GITHUB_OUTPUT
+            echo "⏭️  Tidak ada dataset baru — skip"
+          fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Pull latest data
+        if: steps.dvc_check.outputs.NEW_DATA == 'true'
+        run: dvc pull data/raw/data.csv.dvc
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Install dependencies
+        if: steps.dvc_check.outputs.NEW_DATA == 'true'
+        run: pip install -e .
+
+      - name: Preprocess
+        if: steps.dvc_check.outputs.NEW_DATA == 'true'
+        run: python src/preprocess.py
+
+      - name: Train
+        if: steps.dvc_check.outputs.NEW_DATA == 'true'
+        run: python src/train.py
+
+      - name: Evaluate & Register
+        if: steps.dvc_check.outputs.NEW_DATA == 'true'
+        run: python src/evaluate_register.py

@@ -1,0 +1,15 @@
+# AlertManager configuration
+# Menerima alert dari Prometheus → forward ke webhook
+
+route:
+  receiver: "webhook-retrain"
+  group_by: ["alertname"]
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 5m
+
+receivers:
+  - name: "webhook-retrain"
+    webhook_configs:
+      - url: "http://webhook:8080/alert"
+        send_resolved: true

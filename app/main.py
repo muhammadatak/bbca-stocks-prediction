@@ -12,11 +12,20 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import socket
 from prometheus_fastapi_instrumentator import Instrumentator
-from prometheus_client import Histogram, Counter
+from prometheus_client import Histogram, Counter, Gauge
 
 from src.preprocess import add_features
 
 
+# ── Custom metrics ────────────────────────────────────────
+model_accuracy = Gauge(
+    "model_accuracy",
+    "Accuracy of the currently loaded champion model"
+)
+model_f1 = Gauge(
+    "model_f1",
+    "F1-score of the currently loaded champion model"
+)
 
 
 app = FastAPI()

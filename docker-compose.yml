@@ -49,6 +49,38 @@ services:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+    networks:
+      - ml-network
+
+  pushgateway:
+    image: prom/pushgateway:latest
+    restart: unless-stopped
+    ports:
+      - "9091:9091"
+    networks:
+      - ml-network
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    networks:
+      - ml-network
+
+  webhook:
+    build:
+      context: .
+      dockerfile: app/DockerFile
+    restart: unless-stopped
+    command: python -m uvicorn src.webhook_server:app --host 0.0.0.0 --port 8080
+    ports:
+      - "8080:8080"
     networks:
       - ml-network
 
