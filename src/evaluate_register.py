@@ -4,12 +4,14 @@ import os
 import sys
 from pathlib import Path
 
+# ── MLflow config ────────────────────────────────────────
+BASE_DIR = Path(__file__).resolve().parent.parent
+os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")
+
 import mlflow
 from mlflow import MlflowClient
 from mlflow.exceptions import MlflowException
 
-# ── MLflow config ────────────────────────────────────────
-BASE_DIR = Path(__file__).resolve().parent.parent
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", f"file:{BASE_DIR / 'mlruns'}")
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 MODEL_NAME = "bbca-xgboost-predictor"

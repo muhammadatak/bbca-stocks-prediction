@@ -1,6 +1,10 @@
 from pathlib import Path
-
 import os
+
+# ── MLflow config ────────────────────────────────────────
+BASE_DIR = Path(__file__).resolve().parent.parent
+os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")
+os.environ.setdefault("MLFLOW_DISABLE_ENV_MANAGER_CONDA_WARNING", "true")
 
 import mlflow
 import mlflow.xgboost
@@ -10,19 +14,12 @@ import numpy as np
 import pandas as pd
 from preprocess import run_split
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-clean_data = BASE_DIR / "data" / "processed" / "clean_data.csv"
-
-# ── MLflow config ────────────────────────────────────────
-# Di CI/CD gunakan file-based backend (mlruns/ lokal).
-# Di dev   gunakan server MLflow (http://localhost:5000).
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", f"file:{BASE_DIR / 'mlruns'}")
-os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")
-os.environ.setdefault("MLFLOW_DISABLE_ENV_MANAGER_CONDA_WARNING", "true")
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 mlflow.set_experiment("stocks_pred_xgboost")
 
 # ── Load data ────────────────────────────────────────────
+clean_data = BASE_DIR / "data" / "processed" / "clean_data.csv"
 df = pd.read_csv(clean_data)
 X_train, y_train, X_valid, y_valid = run_split(df)
 
